@@ -344,6 +344,7 @@ const start = async () => {
     console.log(`📦 [SDK CDN] Bundles at http://0.0.0.0:${env.PORT}/sdk/v1/`);
     console.log(`🛡️ [Error Handler] Global Zod, Prisma & S3 error catchers active!`);
     console.log(`===============================================================\n`);
+    seedEcomDatabase().catch((err) => console.warn("[DB Auto-Init]:", err.message));
     startExpiryCronJob();
     if (telegramService.isConfigured()) {
       telegramService.startPolling();
