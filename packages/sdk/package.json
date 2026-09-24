@@ -1,0 +1,21 @@
+{
+  "name": "@boutique/sdk",
+  "version": "1.0.0",
+  "description": "Unified Client SDK for Boutique Websites - Gatekeeper, Storage Quota, Dynamic CMS & Billing",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2"
+  },
+  "files": [
+    "dist"
+  ]
+}

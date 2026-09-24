@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SuperAdmin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Master E-Commerce Agency Owner")
+  createdAt    DateTime @default(now())
+}
+
+model SubscriptionPlan {
+  id                    String   @id
+  name                  String
+  priceInrMonthly       Int
+  priceInrYearly        Int
+  maxImages             Int
+  maxStorageBytes       BigInt
+
+  allowCustomDomain     Boolean  @default(true)
+  allowOnlineCart       Boolean  @default(true)
+  allowCustomerGateway  Boolean  @default(true)
+  allowOrdersPortal     Boolean  @default(true)
+  allowInventory        Boolean  @default(true)
+  allowVariants         Boolean  @default(true)
+  allowCustomersCrm     Boolean  @default(true)
+  allowCoupons          Boolean  @default(true)
+  allowStaffAccounts    Int      @default(2)
+  allowAiSalesBot       Boolean  @default(false)
+
+  createdAt             DateTime @default(now())
+  subscriptions         ClientSubscription[]
+}
+
+model Client {
+  id              String   @id
+  businessName    String
+  ownerName       String
+  ownerPhone      String
+  ownerEmail      String?
+  city            String   @default("Hyderabad")
+  storeAddress    String?
+  instagramHandle String?
+  websiteType     String   @default("ECOMMERCE")
+  primaryDomain   String
+  allowedDomains  String
+
+  adminUsername   String   @default("admin")
+  adminPassword   String   @default("StorePassword@123")
+  githubRepo      String?
+  developerNotes  String?
+  projectZipUrl   String?
+  projectZipName  String?
+
+  publicApiKey    String   @unique
+  secretApiKey    String   @unique
+  createdAt       DateTime @default(now())
+
+  subscription    ClientSubscription?
+  media           ClientMedia[]
+  staff           StoreStaff[]
+  orders          StoreOrder[]
+  customers       StoreCustomer[]
+  coupons         StoreCoupon[]
+  invoices        SubscriptionInvoice[]
+}
+
+model ClientSubscription {
+  id                     String    @id @default(uuid())
+  clientId               String    @unique
+  client                 Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  planId                 String
+  plan                   SubscriptionPlan @relation(fields: [planId], references: [id])
+  environmentMode        String    @default("TESTING")
+  status                 String    @default("TESTING")
+  billingCycle           String    @default("MONTHLY")
+  activatedAt            DateTime?
+  currentPeriodStart     DateTime  @default(now())
+  currentPeriodEnd       DateTime
+  gracePeriodEnd         DateTime
+  razorpaySubscriptionId String?
+  autoDebitEnabled       Boolean   @default(false)
+  isManualOverride       Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model StoreStaff {
+  id            String   @id @default(uuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name          String
+  email         String
+  phone         String?
+  passwordHash  String
+  role          String   @default("MANAGER")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([clientId, email])
+}
+
+model StoreOrder {
+  id                String   @id @default(uuid())
+  clientId          String
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  orderNumber       String
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  shippingAddress   String
+  city              String
+  pincode           String
+  itemsJson         String
+  subtotalInr       Int
+  discountInr       Int      @default(0)
+  deliveryFeeInr    Int      @default(0)
+  totalAmountInr    Int
+  status            String   @default("PENDING")
+  paymentStatus     String   @default("PENDING")
+  paymentMethod     String   @default("RAZORPAY")
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model StoreCustomer {
+  id            String   @id @default(uuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String?
+  city          String?
+  address       String?
+  totalOrders   Int      @default(1)
+  totalSpentInr Int      @default(0)
+  lastOrderAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@unique([clientId, phone])
+}
+
+model StoreCoupon {
+  id            String    @id @default(uuid())
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  code          String
+  discountType  String
+  discountValue Int
+  minOrderValue Int       @default(0)
+  maxUses       Int       @default(100)
+  usedCount     Int       @default(0)
+  isActive      Boolean   @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([clientId, code])
+}
+
+model ClientMedia {
+  id            String   @id @default(uuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  fileName      String
+  fileUrl       String
+  fileSizeBytes BigInt
+  mimeType      String   @default("image/webp")
+  category      String   @default("collection")
+  title         String?
+  price         Int?
+  stockCount    Int      @default(10)
+  sku           String?
+  sizesJson     String?
+  colorsJson    String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model SubscriptionInvoice {
+  id                String   @id @default(uuid())
+  clientId          String
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amountInr         Int
+  currency          String   @default("INR")
+  billingCycle      String   @default("MONTHLY")
+  status            String   @default("PAID")
+  paymentMethod     String   @default("RAZORPAY_GATEWAY")
+  razorpayPaymentId String?
+  invoicePdfUrl     String?
+  createdAt         DateTime @default(now())
+}
