@@ -27,4 +27,4 @@ COPY --from=builder /app ./
 
 EXPOSE 5000
 
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push --schema=apps/api/prisma/schema.prisma && npx tsx apps/api/src/db/seed.ts && node apps/api/dist/server.js"]
