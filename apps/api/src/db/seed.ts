@@ -87,12 +87,13 @@ export async function seedEcomDatabase() {
 
   console.log("[Seed] E-Commerce Database seeded successfully.");
 }
-
-seedEcomDatabase()
-  .catch((e) => {
-    console.error("[Seed Error]", e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (process.argv[1] && (process.argv[1].endsWith("seed.ts") || process.argv[1].endsWith("seed.js"))) {
+  seedEcomDatabase()
+    .catch((e) => {
+      console.error("[Seed Error]", e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
