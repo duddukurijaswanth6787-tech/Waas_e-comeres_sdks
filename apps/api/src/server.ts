@@ -18,6 +18,7 @@ import { clientAdminAuthRoutes } from "./modules/client/adminAuth.routes.js";
 import { storageRoutes } from "./modules/storage/storage.routes.js";
 import { billingRoutes } from "./modules/billing/billing.routes.js";
 import { ecomRoutes } from "./modules/ecom/ecom.routes.js";
+import { storeAuthRoutes } from "./modules/client/storeAuth.routes.js";
 import { startExpiryCronJob } from "./services/cron.service.js";
 import { seedEcomDatabase } from "./db/seed.js";
 import { telegramService } from "./services/telegram.service.js";
@@ -318,6 +319,7 @@ export const buildApp = async () => {
 
   // Register API Routes
   await app.register(adminAuthRoutes, { prefix: "/api/v1/admin/auth" });
+  await app.register(storeAuthRoutes, { prefix: "/api/v1/auth" });
   await app.register(adminClientRoutes, { prefix: "/api/v1/admin" });
   await app.register(clientStatusRoutes, { prefix: "/api/v1/client" });
   await app.register(clientAdminAuthRoutes, { prefix: "/api/v1/client" });
