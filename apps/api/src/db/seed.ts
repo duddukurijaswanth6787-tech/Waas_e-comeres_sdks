@@ -209,7 +209,7 @@ export async function seedEcomDatabase() {
   });
 
   // Media items for Vasanti Creations
-  await prisma.mediaItem.upsert({
+  await prisma.clientMedia.upsert({
     where: { id: "4cd7328f-f8bc-4923-9072-7edb83794eea" },
     update: {},
     create: {
@@ -227,7 +227,7 @@ export async function seedEcomDatabase() {
     },
   });
 
-  await prisma.mediaItem.upsert({
+  await prisma.clientMedia.upsert({
     where: { id: "a869b5d2-7283-414c-be75-94ba266772e5" },
     update: {},
     create: {
