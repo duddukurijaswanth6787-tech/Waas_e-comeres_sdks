@@ -1,16 +1,26 @@
 import React, { useState } from "react";
-import { api } from "../services/api";
-import { Shield, Lock, Mail, ArrowRight, Sparkles } from "lucide-react";
+import { api, getCustomApiUrl, setCustomApiUrl } from "../services/api";
+import { Shield, Lock, Mail, ArrowRight, Sparkles, Server, Check } from "lucide-react";
 
 interface LoginModalProps {
   onSuccess: () => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
-  const [email, setEmail] = useState("admin@ecomplatform.com");
+  const [email, setEmail] = useState("admin@boutiqueplatform.com");
   const [password, setPassword] = useState("AdminPassword@123");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showApiConfig, setShowApiConfig] = useState(false);
+  const [apiUrl, setApiUrl] = useState(getCustomApiUrl());
+  const [savedUrlMsg, setSavedUrlMsg] = useState(false);
+
+  const handleSaveApiUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCustomApiUrl(apiUrl);
+    setSavedUrlMsg(true);
+    setTimeout(() => setSavedUrlMsg(false), 2500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,8 +29,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
     try {
       await api.login(email, password);
       onSuccess();
-    } catch {
-      setError("Invalid admin email or password");
+    } catch (err: any) {
+      setError(err?.message || "Invalid admin email or password");
     } finally {
       setLoading(false);
     }
@@ -44,7 +54,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 text-center font-medium">
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium leading-relaxed">
               {error}
             </div>
           )}
@@ -84,8 +94,43 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onSuccess }) => {
           </button>
         </form>
 
-        <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-100">
-          Default seed: <span className="text-slate-600 font-mono">admin@ecomplatform.com</span>
+        {/* Backend API URL Settings Toggle */}
+        <div className="pt-3 border-t border-slate-100 space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Default seed: <strong className="text-slate-700 font-mono">admin@boutiqueplatform.com</strong></span>
+            <button
+              type="button"
+              onClick={() => setShowApiConfig(!showApiConfig)}
+              className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 cursor-pointer"
+            >
+              <Server className="w-3 h-3" /> {showApiConfig ? "Hide API Config" : "API Server URL"}
+            </button>
+          </div>
+
+          {showApiConfig && (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+              <label className="block font-semibold text-slate-700">Railway / Cloud Backend URL:</label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="https://your-service.up.railway.app"
+                  value={apiUrl}
+                  onChange={(e) => setApiUrl(e.target.value)}
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveApiUrl}
+                  className="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 cursor-pointer"
+                >
+                  {savedUrlMsg ? <><Check className="w-3 h-3 text-emerald-400" /> Saved</> : "Set URL"}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Current connected backend: <code className="text-slate-600">{apiUrl}</code>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

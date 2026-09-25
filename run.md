@@ -97,6 +97,6 @@ website/
 
 ## ☁️ 6. Production Deployment Commands
 
-1. **Backend API (`apps/api`):** Deploy to Railway / Render / VPS with `DATABASE_URL` and `PORT`.
+1. **Backend API (`apps/api`):** Deploy to Railway with `DATABASE_URL` and `PORT`.
 2. **Super Admin Dashboard (`apps/super-admin`):** Build with `npm run build:admin` and deploy `dist/` to Vercel or Cloudflare Pages.
 3. **Client Static Websites:** Build with `npm run build` and deploy to AWS S3 Static Website Hosting or Vercel.

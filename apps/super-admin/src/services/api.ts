@@ -1,10 +1,26 @@
 import { ClientData, SubscriptionPlan, InvoiceItem, WebsiteHealthStatus, WebsiteHealthSummary } from "../types";
 
 const rawMeta = import.meta;
-const envApiUrl = "env" in rawMeta && rawMeta.env && typeof rawMeta.env === "object" && "VITE_API_URL" in rawMeta.env && typeof rawMeta.env.VITE_API_URL === "string"
+const defaultApiUrl = "env" in rawMeta && rawMeta.env && typeof rawMeta.env === "object" && "VITE_API_URL" in rawMeta.env && typeof rawMeta.env.VITE_API_URL === "string"
   ? rawMeta.env.VITE_API_URL
-  : "http://localhost:5000";
-export const API_BASE = `${envApiUrl}/api/v1`;
+  : "http://localhost:4000";
+
+export function getCustomApiUrl(): string {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("super_admin_custom_api_url");
+    if (saved) return saved.replace(/\/+$/, "");
+  }
+  return defaultApiUrl.replace(/\/+$/, "");
+}
+
+export function setCustomApiUrl(url: string): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("super_admin_custom_api_url", url.trim().replace(/\/+$/, ""));
+  }
+}
+
+export const getApiBase = () => `${getCustomApiUrl()}/api/v1`;
+export const API_BASE = `${defaultApiUrl}/api/v1`;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem("super_admin_jwt");
@@ -28,25 +44,36 @@ function getHeaders(includeContentType = true): HeadersInit {
 
 export const api = {
   async login(email: string, password: string): Promise<{ success: boolean; token: string }> {
-    const res = await fetch(`${API_BASE}/admin/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) throw new Error("Invalid admin credentials");
-    const data = await res.json();
-    setAuthToken(data.token);
-    return data;
+    const currentBase = getApiBase();
+    try {
+      const res = await fetch(`${currentBase}/admin/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Invalid admin credentials");
+      }
+      const data = await res.json();
+      setAuthToken(data.token);
+      return data;
+    } catch (err: any) {
+      if (err.message && err.message !== "Failed to fetch") {
+        throw err;
+      }
+      throw new Error(`Cannot reach Backend API at ${currentBase}. Please check your backend connection.`);
+    }
   },
 
   async verifyMe(): Promise<boolean> {
     const token = getAuthToken();
     if (!token) return false;
-    const res = await fetch(`${API_BASE}/admin/auth/me`, { headers: getHeaders() });
+    const res = await fetch(`${getApiBase()}/admin/auth/me`, { headers: getHeaders() });
     return res.ok;
   },
   async changePassword(currentPassword?: string, newPassword?: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/admin/auth/change-password`, {
+    const res = await fetch(`${getApiBase()}/admin/auth/change-password`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ currentPassword, newPassword }),
@@ -59,13 +86,13 @@ export const api = {
   },
 
   async getClients(): Promise<ClientData[]> {
-    const res = await fetch(`${API_BASE}/admin/clients`, { headers: getHeaders() });
+    const res = await fetch(`${getApiBase()}/admin/clients`, { headers: getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch clients");
     return res.json();
   },
 
   async getPlans(): Promise<SubscriptionPlan[]> {
-    const res = await fetch(`${API_BASE}/admin/plans`, { headers: getHeaders() });
+    const res = await fetch(`${getApiBase()}/admin/plans`, { headers: getHeaders() });
     if (!res.ok) throw new Error("Failed to fetch plans");
     return res.json();
   },
@@ -90,7 +117,7 @@ export const api = {
       allowAiSalesBot?: boolean;
     }
   ): Promise<{ success: boolean; plan: SubscriptionPlan }> {
-    const res = await fetch(`${API_BASE}/admin/plans/${planId}`, {
+    const res = await fetch(`${getApiBase()}/admin/plans/${planId}`, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -100,7 +127,7 @@ export const api = {
   },
 
   async getInvoices(): Promise<InvoiceItem[]> {
-    const res = await fetch(`${API_BASE}/admin/invoices`, { headers: getHeaders() });
+    const res = await fetch(`${getApiBase()}/admin/invoices`, { headers: getHeaders() });
     if (!res.ok) return [];
     return res.json();
   },
@@ -125,7 +152,7 @@ export const api = {
     projectZipUrl?: string | null;
     projectZipName?: string | null;
   }): Promise<{ success: boolean; client: ClientData }> {
-    const res = await fetch(`${API_BASE}/admin/clients`, {
+    const res = await fetch(`${getApiBase()}/admin/clients`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -156,7 +183,7 @@ export const api = {
       planId?: string;
     }
   ): Promise<{ success: boolean; client: ClientData }> {
-    const res = await fetch(`${API_BASE}/admin/clients/${clientId}`, {
+    const res = await fetch(`${getApiBase()}/admin/clients/${clientId}`, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -178,7 +205,7 @@ export const api = {
       planId?: string;
     }
   ): Promise<{ success: boolean }> {
-    const res = await fetch(`${API_BASE}/admin/clients/${clientId}/status`, {
+    const res = await fetch(`${getApiBase()}/admin/clients/${clientId}/status`, {
       method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(payload),
@@ -188,7 +215,7 @@ export const api = {
   },
 
   async deleteClient(clientId: string, superAdminPassword?: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/admin/clients/${clientId}`, {
+    const res = await fetch(`${getApiBase()}/admin/clients/${clientId}`, {
       method: "DELETE",
       headers: getHeaders(true),
       body: JSON.stringify({ superAdminPassword: superAdminPassword || "" }),
@@ -201,7 +228,7 @@ export const api = {
   },
 
   async pingClientWebsite(clientId: string): Promise<WebsiteHealthStatus> {
-    const res = await fetch(`${API_BASE}/admin/clients/${clientId}/health`, {
+    const res = await fetch(`${getApiBase()}/admin/clients/${clientId}/health`, {
       headers: getHeaders(false),
     });
     if (!res.ok) throw new Error("Failed to check website health");
@@ -212,7 +239,7 @@ export const api = {
     summary: WebsiteHealthSummary;
     results: Record<string, WebsiteHealthStatus>;
   }> {
-    const res = await fetch(`${API_BASE}/admin/clients/health-check-all`, {
+    const res = await fetch(`${getApiBase()}/admin/clients/health-check-all`, {
       method: "GET",
       headers: getHeaders(false),
     });
@@ -221,7 +248,7 @@ export const api = {
   },
 
   async pingDomain(domain: string): Promise<WebsiteHealthStatus> {
-    const res = await fetch(`${API_BASE}/admin/ping-domain?domain=${encodeURIComponent(domain)}`, {
+    const res = await fetch(`${getApiBase()}/admin/ping-domain?domain=${encodeURIComponent(domain)}`, {
       headers: getHeaders(false),
     });
     if (!res.ok) throw new Error("Failed to ping domain");
@@ -234,7 +261,7 @@ export const api = {
     uploadUrl: string;
     publicUrl: string;
   }> {
-    const res = await fetch(`${API_BASE}/admin/clients/project-zip/presigned-url`, {
+    const res = await fetch(`${getApiBase()}/admin/clients/project-zip/presigned-url`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ fileName, clientId }),

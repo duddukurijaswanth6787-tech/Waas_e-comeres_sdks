@@ -15,7 +15,7 @@
 | **New AWS Account ID** | `<NEW_ACCOUNT_ID>` *(e.g. 12-digit AWS Account ID)* | Target AWS account with active credits |
 | **New S3 Bucket** | `boutique-media-<NEW_ACCOUNT_ID>-hyd` *(or chosen name)* | Target bucket to receive all media |
 | **New AWS Region** | `ap-south-2` *(or preferred region, e.g., `ap-south-1`)* | Target bucket region |
-| **Backend API** | **Render** | Node.js/Express API (`apps/api`) |
+| **Backend API** | **Railway** | Node.js Fastify API (`apps/api`) |
 | **Frontend** | **Vercel** | React / Vite Single Page App (`apps/super-admin`) |
 | **Upload Flow** | **S3 Pre-signed URLs** | Frontend requests pre-signed URL $\rightarrow$ Uploads direct to S3 $\rightarrow$ Backend stores public URL |
 
@@ -30,13 +30,13 @@ sequenceDiagram
     actor Agent as AI Agent / CLI
     participant OldAWS as Old AWS Account (848910045051)
     participant NewAWS as New AWS Account (Target)
-    participant Render as Render (Backend)
+    participant Railway as Railway (Backend)
     participant Vercel as Vercel (Frontend)
 
     User->>NewAWS: 1. Create target bucket & IAM user
     User->>OldAWS: 2. Add cross-account read bucket policy
     Agent->>NewAWS: 3. Configure CLI profile & run `aws s3 sync`
-    Agent->>Render: 4. Update Backend env vars (Keys & Bucket)
+    Agent->>Railway: 4. Update Backend env vars (Keys & Bucket)
     Agent->>Vercel: 5. Update Frontend env vars / configs
     Agent->>Agent: 6. Run Database URL replacement script
     Agent->>NewAWS: 7. Run final catch-up `aws s3 sync`
@@ -153,8 +153,8 @@ aws s3 sync s3://boutique-media-848910045051-hyd s3://<NEW_BUCKET_NAME> --profil
 
 ### 🔷 Phase 3: Application & Environment Updates
 
-#### Step 3.1: Update Backend Environment Variables on Render & Local `.env`
-Update `c:\Users\duddu\Downloads\web-Waas_22-09\.env` and the **Render Web Service Dashboard Environment**:
+#### Step 3.1: Update Backend Environment Variables on Railway & Local `.env`
+Update `.env` and the **Railway Service Variables**:
 
 ```env
 # AWS S3 Storage
@@ -189,7 +189,7 @@ If `apps/super-admin` or storefront applications use Vercel environment variable
 ### 🔷 Phase 4: Final Catch-Up Sync & Verification
 
 #### Step 4.1: Catch-Up Sync
-To ensure no images uploaded by users while configuring Render were missed, run one final sync:
+To ensure no images uploaded by users while configuring Railway were missed, run one final sync:
 ```bash
 aws s3 sync s3://boutique-media-848910045051-hyd s3://<NEW_BUCKET_NAME> --profile new-account
 ```
@@ -214,4 +214,4 @@ aws s3 sync s3://boutique-media-848910045051-hyd s3://<NEW_BUCKET_NAME> --profil
 | **`AccessDenied` on `aws s3 sync`** | Bucket policy missing in Old Account or incorrect Account ID | Verify the Bucket Policy in Account A contains the exact 12-digit ID of Account B. |
 | **`AccessDenied` when viewing images in new bucket** | Object ownership mismatch or missing public policy | Enable **Bucket owner enforced** in target bucket $\rightarrow$ apply public read bucket policy. |
 | **CORS error on upload from frontend** | Target bucket missing CORS rules | Add CORS JSON in Target Bucket permissions (Phase 1, Step 1.2). |
-| **Broken images on live site** | Old URLs still in database or old environment variables cached | Run the SQL `REPLACE` script and trigger a manual redeploy on Render. |
+| **Broken images on live site** | Old URLs still in database or old environment variables cached | Run the SQL `REPLACE` script and trigger a manual redeploy on Railway. |
