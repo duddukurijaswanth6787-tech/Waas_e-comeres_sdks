@@ -116,13 +116,13 @@ export class GatekeeperModule {
         );
       }
 
-      // Cache for 15 minutes
+      // Cache for 30 seconds for quick suspension / renewal sync
       if (typeof window !== "undefined") {
         localStorage.setItem(
           cacheKey,
           JSON.stringify({
             data: status,
-            expires: Date.now() + 15 * 60 * 1000,
+            expires: Date.now() + 30 * 1000,
           })
         );
         this.applyStatusToDOM(status);
