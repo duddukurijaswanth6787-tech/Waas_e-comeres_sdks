@@ -3,7 +3,7 @@ import { ClientData, SubscriptionPlan, InvoiceItem, WebsiteHealthStatus, Website
 const rawMeta = import.meta;
 const defaultApiUrl = "env" in rawMeta && rawMeta.env && typeof rawMeta.env === "object" && "VITE_API_URL" in rawMeta.env && typeof rawMeta.env.VITE_API_URL === "string"
   ? rawMeta.env.VITE_API_URL
-  : "http://localhost:4000";
+  : "https://boutique-api-production-d010.up.railway.app";
 
 export function getCustomApiUrl(): string {
   if (typeof window !== "undefined") {
