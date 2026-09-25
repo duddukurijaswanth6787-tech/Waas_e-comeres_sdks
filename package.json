@@ -9,7 +9,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build:admin",
     "dev:api": "npm --workspace=apps/api run dev",
     "dev:sdk": "npm --workspace=packages/sdk run dev",
     "dev:admin": "npm --workspace=apps/super-admin run dev",
