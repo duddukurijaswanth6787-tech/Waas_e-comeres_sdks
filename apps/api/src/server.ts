@@ -356,6 +356,6 @@ const start = async () => {
   }
 };
 
-if (process.argv[1] && process.argv[1].endsWith("server.ts")) {
+if (!process.argv[1] || process.argv[1].endsWith("server.ts") || process.argv[1].endsWith("server.js")) {
   start();
 }
