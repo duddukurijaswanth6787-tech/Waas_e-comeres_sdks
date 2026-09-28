@@ -7,6 +7,24 @@ export async function seedEcomDatabase() {
 
   const plans = [
     {
+      id: "plan_test_micro",
+      name: "Micro Live Trial (Test Plan)",
+      priceInrMonthly: 10,
+      priceInrYearly: 100,
+      maxImages: 100,
+      maxStorageBytes: BigInt(5 * 1024 * 1024 * 1024), // 5 GB
+      allowCustomDomain: true,
+      allowOnlineCart: true,
+      allowCustomerGateway: true,
+      allowOrdersPortal: true,
+      allowInventory: true,
+      allowVariants: true,
+      allowCustomersCrm: true,
+      allowCoupons: true,
+      allowStaffAccounts: 2,
+      allowAiSalesBot: true,
+    },
+    {
       id: "plan_ecom_standard",
       name: "E-Com Standard Store",
       priceInrMonthly: 2499,
