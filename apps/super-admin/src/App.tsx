@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api, getAuthToken, clearAuthToken } from "./services/api";
 import { ClientData, SubscriptionPlan, InvoiceItem, WebsiteHealthStatus } from "./types";
 import { LoginModal } from "./components/LoginModal";
@@ -146,17 +146,47 @@ export function App() {
     showToast(`Boutique "${newClient.businessName}" onboarded successfully!`, "success");
   };
 
-  const [selectedClientForPrompt, setSelectedClientForPrompt] = useState<ClientData | null>(null);
-  const [selectedClientDrawer, setSelectedClientDrawer] = useState<ClientData | null>(null);
-  const [selectedClientForEdit, setSelectedClientForEdit] = useState<ClientData | null>(null);
+  const [selectedClientIdForPrompt, setSelectedClientIdForPrompt] = useState<string | null>(null);
+  const [selectedClientIdForDrawer, setSelectedClientIdForDrawer] = useState<string | null>(null);
+  const [selectedClientIdForEdit, setSelectedClientIdForEdit] = useState<string | null>(null);
   const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<SubscriptionPlan | null>(null);
   const [freshlyOnboardedClient, setFreshlyOnboardedClient] = useState<ClientData | null>(null);
   const [showOnboardModal, setShowOnboardModal] = useState<boolean>(false);
   const [showChangeAdminPwdModal, setShowChangeAdminPwdModal] = useState<boolean>(false);
-  const [clientToDelete, setClientToDelete] = useState<ClientData | null>(null);
+  const [clientIdToDelete, setClientIdToDelete] = useState<string | null>(null);
   const [deleteModalLoading, setDeleteModalLoading] = useState<boolean>(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
+
+  const selectedClientDrawer = useMemo(
+    () => (selectedClientIdForDrawer ? clients.find((c) => c.id === selectedClientIdForDrawer) || null : null),
+    [clients, selectedClientIdForDrawer]
+  );
+  const selectedClientForPrompt = useMemo(
+    () => (selectedClientIdForPrompt ? clients.find((c) => c.id === selectedClientIdForPrompt) || null : null),
+    [clients, selectedClientIdForPrompt]
+  );
+  const selectedClientForEdit = useMemo(
+    () => (selectedClientIdForEdit ? clients.find((c) => c.id === selectedClientIdForEdit) || null : null),
+    [clients, selectedClientIdForEdit]
+  );
+  const clientToDelete = useMemo(
+    () => (clientIdToDelete ? clients.find((c) => c.id === clientIdToDelete) || null : null),
+    [clients, clientIdToDelete]
+  );
+
+  const setSelectedClientDrawer = (client: ClientData | null) => {
+    setSelectedClientIdForDrawer(client ? client.id : null);
+  };
+  const setSelectedClientForPrompt = (client: ClientData | null) => {
+    setSelectedClientIdForPrompt(client ? client.id : null);
+  };
+  const setSelectedClientForEdit = (client: ClientData | null) => {
+    setSelectedClientIdForEdit(client ? client.id : null);
+  };
+  const setClientToDelete = (client: ClientData | null) => {
+    setClientIdToDelete(client ? client.id : null);
+  };
 
   const showToast = (text: string, type: "success" | "error" | "info" = "success") => {
     setToastMessage({ text, type });
@@ -179,11 +209,6 @@ export function App() {
       api.pingAllWebsites()
         .then((data) => setWebsiteHealth(data.results))
         .catch(() => {});
-
-      if (selectedClientDrawer) {
-        const fresh = clientsData.find((c) => c.id === selectedClientDrawer.id);
-        if (fresh) setSelectedClientDrawer(fresh);
-      }
     } catch {
       setIsAuthenticated(false);
     } finally {
