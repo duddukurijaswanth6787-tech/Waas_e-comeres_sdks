@@ -11,46 +11,44 @@ export class StorageModule {
    * Compresses image client-side to modern WebP format
    */
   public async compressImage(file: File, maxWidth = 1920, quality = 0.82): Promise<Blob> {
-    const { promise, resolve, reject } = Promise.withResolvers<Blob>();
+    return new Promise<Blob>((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
 
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(img.src);
-      const canvas = document.createElement("canvas");
-      let width = img.width;
-      let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
 
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
+        canvas.width = width;
+        canvas.height = height;
 
-      canvas.width = width;
-      canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          return reject(new Error("Canvas 2D context unavailable for WebP compression"));
+        }
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        return reject(new Error("Canvas 2D context unavailable for WebP compression"));
-      }
+        ctx.drawImage(img, 0, 0, width, height);
 
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error("Failed to compress image to WebP format"));
-          }
-        },
-        "image/webp",
-        quality
-      );
-    };
-    img.onerror = () => reject(new Error("Invalid or corrupted image file"));
-
-    return promise;
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Failed to compress image to WebP format"));
+            }
+          },
+          "image/webp",
+          quality
+        );
+      };
+      img.onerror = () => reject(new Error("Invalid or corrupted image file"));
+    });
   }
 
   /**
@@ -131,30 +129,29 @@ export class StorageModule {
     const { uploadUrl, publicUrl } = await preUploadResponse.json();
 
     // 3. Direct Upload to AWS S3
-    const { promise: uploadPromise, resolve: resolveUpload, reject: rejectUpload } = Promise.withResolvers<void>();
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", uploadUrl, true);
-    xhr.setRequestHeader("Content-Type", mimeType);
+    await new Promise<void>((resolveUpload, rejectUpload) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", uploadUrl, true);
+      xhr.setRequestHeader("Content-Type", mimeType);
 
-    if (options.onProgress) {
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          options.onProgress?.(Math.round((e.loaded / e.total) * 100));
+      if (options.onProgress) {
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            options.onProgress?.(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolveUpload();
+        } else {
+          rejectUpload(new Error(`Cloud storage upload failed with status ${xhr.status}: ${xhr.statusText}`));
         }
       };
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolveUpload();
-      } else {
-        rejectUpload(new Error(`Cloud storage upload failed with status ${xhr.status}: ${xhr.statusText}`));
-      }
-    };
-    xhr.onerror = () => rejectUpload(new Error("Network drop during direct cloud upload. Please retry."));
-    xhr.send(uploadBlob);
-
-    await uploadPromise;
+      xhr.onerror = () => rejectUpload(new Error("Network drop during direct cloud upload. Please retry."));
+      xhr.send(uploadBlob);
+    });
 
     // 4. Confirm upload in Database
     let confirmResponse: Response;

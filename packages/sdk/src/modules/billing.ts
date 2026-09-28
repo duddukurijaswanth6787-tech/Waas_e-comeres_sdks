@@ -26,16 +26,15 @@ export class BillingModule {
     if (typeof window === "undefined") return false;
     if (window.Razorpay) return true;
 
-    const { promise, resolve } = Promise.withResolvers<boolean>();
+    return new Promise<boolean>((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
 
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-
-    document.head.appendChild(script);
-    return promise;
+      document.head.appendChild(script);
+    });
   }
 
   /**
